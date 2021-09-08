@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Antlr4" Version="4.6.6">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\README.md">
+        <Link>README.md</Link>
+      </Content>
+      <Content Include="grammar\mirana.g4" />
+      <Content Include="grammar\MiranaPrepLexer.g4" />
+      <Content Include="grammar\MiranaPrepParser.g4" />
+      <Content Include="obj\Debug\net5.0\mirana.tokens" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.AssemblyInfoInputs.cache" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.assets.cache" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.csproj.Antlr4GeneratedCodeFileListAbsolute.txt" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.csproj.CopyComplete" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.csproj.CoreCompileInputs.cache" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.csproj.FileListAbsolute.txt" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.csprojAssemblyReference.cache" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.dll" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.GeneratedMSBuildEditorConfig.editorconfig" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.genruntimeconfig.cache" />
+      <Content Include="obj\Debug\net5.0\MiranaCompiler.pdb" />
+      <Content Include="obj\Debug\net5.0\miranaLexer.tokens" />
+      <Content Include="obj\Debug\net5.0\MiranaPrepLexer.tokens" />
+      <Content Include="obj\Debug\net5.0\MiranaPrepParser.tokens" />
+      <Content Include="obj\Debug\net5.0\ref\MiranaCompiler.dll" />
+      <Content Include="obj\MiranaCompiler.csproj.nuget.dgspec.json" />
+      <Content Include="obj\MiranaCompiler.csproj.nuget.g.props" />
+      <Content Include="obj\MiranaCompiler.csproj.nuget.g.targets" />
+      <Content Include="obj\project.assets.json" />
+      <Content Include="obj\project.nuget.cache" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="obj\Debug\net5.0\.NETCoreApp,Version=v5.0.AssemblyAttributes.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaBaseListener.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaBaseVisitor.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaCompiler.AssemblyInfo.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaLexer.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaListener.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaParser.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepLexer.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepParser.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepParserBaseListener.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepParserBaseVisitor.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepParserListener.cs" />
+      <Compile Include="obj\Debug\net5.0\MiranaPrepParserVisitor.cs" />
+      <Compile Include="obj\Debug\net5.0\miranaVisitor.cs" />
+      <Compile Remove="obj\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="obj\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="obj\**" />
+    </ItemGroup>
+
+</Project>
