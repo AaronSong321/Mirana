@@ -320,6 +320,9 @@ namespace MiranaCompiler
             if (context.parlist() != null) {
                 WriteParamList(context.parlist());
             }
+            else {
+                writer.Write("()");
+            }
             ++indent;
             WriteIndent();
             WriteBlock(context.expBlock());

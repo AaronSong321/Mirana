@@ -32,3 +32,8 @@ Publish the first version of Mirana.
 ## 1.5.1 08/09/21
 
 - Print the state of one compilation unit immediately when the task is done.
+
+## 1.5.2 09/09/21
+
+- Fix the bug that in easy lambda expression without parameter list the empty parameter list is not printed.
+
