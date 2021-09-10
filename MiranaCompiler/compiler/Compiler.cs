@@ -41,7 +41,7 @@ namespace MiranaCompiler
 
     public class Compiler
     {
-        public static readonly Version Version = new(1, 5, 1);
+        public static readonly Version Version = new(1, 5, 4);
         public Compiler() { }
         public async Task CompileAsync(string[] paths)
         {

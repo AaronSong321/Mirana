@@ -324,7 +324,6 @@ namespace MiranaCompiler
                 writer.Write("()");
             }
             ++indent;
-            WriteIndent();
             WriteBlock(context.expBlock());
             WriteEnd();
         }
@@ -346,9 +345,9 @@ namespace MiranaCompiler
         private void WriteExp(miranaParser.Ifexp_elifContext context)
         {
             var predicate = context.predicateexp();
+            WriteIndent();
             if (predicate.var_() != null) {
-                WriteIndent();
-                writer.WriteLine("else ");
+                writer.WriteLine("else");
                 ++indent;
                 WriteIndent();
                 writer.Write("local ");
@@ -599,17 +598,34 @@ namespace MiranaCompiler
 
         private void WriteBlock(miranaParser.ExpBlockContext context)
         {
-            context.stat().ForEach(WriteStat);
-            if (context.retstat() != null) {
-                WriteStat(context.retstat());
+            if (context.retstat() is null && context.explist() is null) {
+                var statements = context.stat();
+                if (statements.Length is not 0) {
+                    if (statements[^1].stat_funcall() != null) {
+                        statements.SkipLast(1).ForEach(WriteStat);
+                        writer.WriteLine();
+                        WriteIndent();
+                        writer.Write("return ");
+                        WriteStat(statements[^1].stat_funcall());
+                    }
+                    else {
+                        statements.ForEach(WriteStat);
+                    }
+                }
             }
-            else if (context.explist() != null) {
-                writer.WriteLine();
-                WriteIndent();
-                writer.Write("return");
-                if (context.explist() != null) {
-                    writer.Write(' ');
-                    WriteExp(context.explist());
+            else {
+                context.stat().ForEach(WriteStat);
+                if (context.retstat() != null) {
+                    WriteStat(context.retstat());
+                }
+                else if (context.explist() != null) {
+                    writer.WriteLine();
+                    WriteIndent();
+                    writer.Write("return");
+                    if (context.explist() != null) {
+                        writer.Write(' ');
+                        WriteExp(context.explist());
+                    }
                 }
             }
         }
@@ -863,7 +879,8 @@ namespace MiranaCompiler
         private static string GetOpdaString(string context) => context switch {
             "+=" => "+",
             "-=" => "-",
-            "*=" => "*"
+            "*=" => "*",
+            _ => throw new()
         };
         private void WriteStat(miranaParser.Stat_cassignContext context)
         {

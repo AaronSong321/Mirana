@@ -37,3 +37,10 @@ Publish the first version of Mirana.
 
 - Fix the bug that in easy lambda expression without parameter list the empty parameter list is not printed.
 
+## 1.5.3 10/09/21
+
+- Fix in `if` expressions before `elseif` clauses indents are not printed.
+
+## 1.5.4 10/09/21
+
+- Fix the bug that in easy lambda expression where the last statement is a function call the value is not returned
