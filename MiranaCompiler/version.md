@@ -1,4 +1,4 @@
-﻿Mirana versioning file
+﻿# Mirana versioning file
 
 This file records the version log of Mirana.
 
@@ -43,4 +43,9 @@ Publish the first version of Mirana.
 
 ## 1.5.4 10/09/21
 
-- Fix the bug that in easy lambda expression where the last statement is a function call the value is not returned
+- Fix the bug that in easy lambda expression where the last statement is a function call the value is not returned.
+
+
+## 1.6 12/09/21
+
+- Deprecate fun lambda and arrow lambda.

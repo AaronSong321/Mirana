@@ -326,7 +326,7 @@ namespace MiranaCompiler
         public override void EnterMacdef(MiranaPrepParser.MacdefContext context)
         {
             string macroName = context.NAME().GetText();
-            var paramList = context.parlist().namelist()?.NAME()?.Select(t => t.GetText())?.ToArray()??Array.Empty<string>();
+            var paramList = context.parlist().namelist()?.NAME().Select(t => t.GetText()).ToArray()??Array.Empty<string>();
             bool dotsPresent = context.parlist().dots() != null;
             string m = context.macroSubstitutionText()?.GetText()??" ";
             if (m[0].IsIdentifierLetter())

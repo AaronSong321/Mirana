@@ -42,7 +42,7 @@ stat
 ;
 
 stat_assign: varlist '=' explist;
-stat_cassign: var_ OpCassign exp;
+stat_cassign: assignableExp OpCassign exp;
 stat_funcall: functioncall;
 stat_label: label;
 stat_break: 'break';
@@ -62,40 +62,26 @@ stat_if_if: 'if' predicateexp 'then' block;
 stat_if_elseif: ('elseif'|'elif') predicateexp 'then' block;
 stat_if_else: 'else' block;
 
-stat_opda: opda var_;
+stat_opda: opda assignableExp;
 
 predicateexp
 : exp
-| 'local' var_ '=' exp
+| 'local' assignableExp '=' exp
 ;
 
-attnamelist
-    : NAME attrib (',' NAME attrib)*
-    ;
+attnamelist: NAME attrib (',' NAME attrib)*;
 
-attrib
-    : ('<' NAME '>')?
-    ;
+attrib: ('<' NAME '>')?;
 
-retstat
-    : 'return' explist? ';'?
-    ;
+retstat: 'return' explist? ';'?;
 
-label
-    : '::' NAME '::'
-    ;
+label: '::' NAME '::';
 
-funcname
-    : NAME ('.' NAME)* (':' NAME)?
-    ;
+funcname: NAME ('.' NAME)* (':' NAME)?;
 
-varlist
-    : var_ (',' var_)*
-    ;
+varlist: assignableExp (',' assignableExp)*;
 
-namelist
-    : NAME (',' NAME)*
-    ;
+namelist: NAME (',' NAME)*;
     
 varName: NAME (':' typeExp)?;
 
@@ -152,14 +138,17 @@ explist
 
 exp
 : 'nil' | 'false' | 'true'
-| functiondef
+| funcLiteral
 | prefixexp
 | ifexp
 | number
 | string
 | dots
+| it
+| lambdaImplicitParam
 | tableconstructor
 | kotLambda
+| operatorLambda
 | <assoc=right> exp operatorPower exp
 | operatorUnary exp
 | exp operatorMulDivMod exp
@@ -169,15 +158,6 @@ exp
 | exp operatorAnd exp
 | exp operatorOr exp
 | exp operatorBitwise exp
-| expext
-;
-
-expext
-: arrowLambda
-| funLambda
-| operatorLambda
-| lambdaImplicitParam
-| it
 ;
 
 ifexp
@@ -210,62 +190,33 @@ opcom
 | operatorStrcat
 ;
 
-arrowLambda
-: oneLambdaParamList arrow exp
-| funLambdaHead arrow exp
-;
-
 lambdaImplicitParam: LambdaImplicitParam;
-
 it: IT;
 
 arrow: '->';
 
-oneLambdaParamList: NAME|dots;
-
-funLambda
-: FUN LBRACE expBlock RBRACE
-;
-
 expBlock: stat* (retstat | explist)?;
 
-funLambdaHead: '(' parlist ')';
+prefixexp: varOrExp nameAndArgs*;
 
-prefixexp
-    : varOrExp nameAndArgs*
-    ;
+functioncall: varOrExp nameAndArgs+;
 
-functioncall
-    : varOrExp nameAndArgs+
-    ;
+varOrExp: assignableExp | '(' exp ')';
 
-varOrExp
-    : var_ | '(' exp ')'
-    ;
+assignableExp: (NAME | it | lambdaImplicitParam | '(' exp ')' varSuffix) varSuffix*;
 
-var_
-    : (NAME | it | lambdaImplicitParam | '(' exp ')' varSuffix) varSuffix*
-    ;
-
-varSuffix
-    : nameAndArgs* ('[' exp ']' | '.' NAME)
-    ;
-
-nameAndArgs
-: (':' NAME)? args
-;
+varSuffix: nameAndArgs* ('[' exp ']' | '.' NAME);
+nameAndArgs: (':' NAME)? args;
 
 args
 : '(' explist? ')' kotLambda
-| '(' explist? ')' funLambda
 | kotLambda
-| funLambda
 | '(' explist? ')'
 | tableconstructor 
 | string
 ;
 
-functiondef
+funcLiteral
 : 'function' funcbody
 ;
 

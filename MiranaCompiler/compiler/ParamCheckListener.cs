@@ -46,40 +46,40 @@ namespace MiranaCompiler.grammar
 
 namespace MiranaCompiler
 {
-    internal class ParamCheckListener: miranaBaseListener
-    {
-        private readonly miranaParser.FunLambdaContext funLambdaContext;
-        private readonly CompileUnit compileUnit;
-        public ParamCheckListener(miranaParser.FunLambdaContext context, CompileUnit compileUnit)
-        {
-            funLambdaContext = context;
-            this.compileUnit = compileUnit;
-        }
-
-        private int recordPause = 0;
-        public override void EnterFunLambda(miranaParser.FunLambdaContext context)
-        {
-            if (context != funLambdaContext)
-                ++recordPause;
-        }
-
-        public override void ExitFunLambda(miranaParser.FunLambdaContext context)
-        {
-            if (context != funLambdaContext)
-                --recordPause;
-        }
-
-        public override void EnterLambdaImplicitParam(miranaParser.LambdaImplicitParamContext context)
-        {
-            if (recordPause == 0)
-                funLambdaContext.usedPar.Add(context.Num);
-        }
-
-        public override void EnterIt(miranaParser.ItContext context)
-        {
-            if (recordPause == 0) {
-                funLambdaContext.UseIt();
-            }
-        }
-    }
+    // internal class ParamCheckListener: miranaBaseListener
+    // {
+    //     private readonly miranaParser.FunLambdaContext funLambdaContext;
+    //     private readonly CompileUnit compileUnit;
+    //     public ParamCheckListener(miranaParser.FunLambdaContext context, CompileUnit compileUnit)
+    //     {
+    //         funLambdaContext = context;
+    //         this.compileUnit = compileUnit;
+    //     }
+    //
+    //     private int recordPause = 0;
+    //     public override void EnterFunLambda(miranaParser.FunLambdaContext context)
+    //     {
+    //         if (context != funLambdaContext)
+    //             ++recordPause;
+    //     }
+    //
+    //     public override void ExitFunLambda(miranaParser.FunLambdaContext context)
+    //     {
+    //         if (context != funLambdaContext)
+    //             --recordPause;
+    //     }
+    //
+    //     public override void EnterLambdaImplicitParam(miranaParser.LambdaImplicitParamContext context)
+    //     {
+    //         if (recordPause == 0)
+    //             funLambdaContext.usedPar.Add(context.Num);
+    //     }
+    //
+    //     public override void EnterIt(miranaParser.ItContext context)
+    //     {
+    //         if (recordPause == 0) {
+    //             funLambdaContext.UseIt();
+    //         }
+    //     }
+    // }
 }
