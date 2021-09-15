@@ -129,19 +129,7 @@ namespace MiranaCompiler
 
         private void WriteArgs(miranaParser.ArgsContext context)
         {
-            if (context.explist() != null && context.funLambda() != null) {
-                writer.Write('(');
-                WriteExp(context.explist());
-                writer.Write(", ");
-                WriteExp(context.funLambda());
-                writer.Write(')');
-            }
-            else if (context.funLambda() != null) {
-                writer.Write('(');
-                WriteExp(context.funLambda());
-                writer.Write(')');
-            }
-            else if (context.kotLambda() != null && context.explist() != null) {
+            if (context.kotLambda() != null && context.explist() != null) {
                 writer.Write('(');
                 WriteExp(context.explist());
                 writer.Write(", ");
@@ -233,10 +221,7 @@ namespace MiranaCompiler
         private void WriteExp(miranaParser.ExpContext context)
         {
             while (true) {
-                if (context.expext() != null) {
-                    WriteExp(context.expext());
-                }
-                else if (context.prefixexp() != null) {
+                if (context.prefixexp() != null) {
                     WritePrefixExp(context.prefixexp());
                 }
                 else if (context.operatorUnary() != null) {
@@ -256,8 +241,26 @@ namespace MiranaCompiler
                 else if (context.kotLambda() != null) {
                     WriteExp(context.kotLambda());
                 }
-                else if (context.functiondef() != null) {
-                    WriteFunctionDef(context.functiondef());
+                else if (context.funcLiteral() != null) {
+                    WriteFunctionDef(context.funcLiteral());
+                }
+                // else if (context.lambdaImplicitParam() != null) {
+                //     if (funLambdaLevel == 0) {
+                //         AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non-lambda environment");
+                //         return;
+                //     }
+                //     var a = context.lambdaImplicitParam();
+                //     writer.Write(GetLambdaImplicitParamName(a.Num));
+                // }
+                // else if (context.it() != null) {
+                //     if (funLambdaLevel == 0) {
+                //         AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non fun lambda context");
+                //         return;
+                //     }
+                //     writer.Write(GetLambdaImplicitIterName());
+                // }
+                else if (context.operatorLambda() != null) {
+                    WriteOperatorLambda(context.operatorLambda());
                 }
                 else if (context.operatorAnd() != null) {
                     WriteExp(context.exp(0));
@@ -324,7 +327,6 @@ namespace MiranaCompiler
                 writer.Write("()");
             }
             ++indent;
-            WriteIndent();
             WriteBlock(context.expBlock());
             WriteEnd();
         }
@@ -338,7 +340,7 @@ namespace MiranaCompiler
             if (context.ifexp_else() != null) {
                 WriteExp(context.ifexp_else());
             }
-            int writeEnds = context.ifexp_elif().Count(t => t.predicateexp().var_() != null) + 2;
+            int writeEnds = context.ifexp_elif().Count(t => t.predicateexp().assignableExp() != null) + 2;
             Enumerable.Range(0, writeEnds).ForEach(_ => WriteEnd());
             writer.Write(")()");
         }
@@ -346,19 +348,19 @@ namespace MiranaCompiler
         private void WriteExp(miranaParser.Ifexp_elifContext context)
         {
             var predicate = context.predicateexp();
-            if (predicate.var_() != null) {
-                WriteIndent();
-                writer.WriteLine("else ");
+            WriteIndent();
+            if (predicate.assignableExp() != null) {
+                writer.WriteLine("else");
                 ++indent;
                 WriteIndent();
                 writer.Write("local ");
-                WriteVar_(predicate.var_());
+                WriteVar_(predicate.assignableExp());
                 writer.Write(" = ");
                 WriteExp(predicate.exp());
                 writer.WriteLine();
                 WriteIndent();
                 writer.Write("if ");
-                WriteVar_(predicate.var_());
+                WriteVar_(predicate.assignableExp());
                 writer.Write(" then");
             }
             else {
@@ -376,15 +378,15 @@ namespace MiranaCompiler
         {
             var predicate = context.predicateexp();
             WriteIndent();
-            if (predicate.var_() != null) {
+            if (predicate.assignableExp() != null) {
                 writer.Write("local ");
-                WriteVar_(predicate.var_());
+                WriteVar_(predicate.assignableExp());
                 writer.Write(" = ");
                 WriteExp(predicate.exp());
                 writer.WriteLine();
                 WriteIndent();
                 writer.Write("if ");
-                WriteVar_(predicate.var_());
+                WriteVar_(predicate.assignableExp());
                 writer.Write(" then");
             }
             else {
@@ -455,7 +457,7 @@ namespace MiranaCompiler
             }
         }
 
-        private void WriteFunctionDef(miranaParser.FunctiondefContext context)
+        private void WriteFunctionDef(miranaParser.FuncLiteralContext context)
         {
             writer.Write("function");
             WriteFuncBody(context.funcbody());
@@ -482,8 +484,8 @@ namespace MiranaCompiler
 
         private void WriteVarOrExp(miranaParser.VarOrExpContext context)
         {
-            if (context.var_() != null) {
-                WriteVar_(context.var_());
+            if (context.assignableExp() != null) {
+                WriteVar_(context.assignableExp());
             }
             else {
                 writer.Write("(");
@@ -492,7 +494,7 @@ namespace MiranaCompiler
             }
         }
 
-        private void WriteVar_(miranaParser.Var_Context context)
+        private void WriteVar_(miranaParser.AssignableExpContext context)
         {
             var suffixes = context.varSuffix();
             if (context.NAME() != null) {
@@ -514,7 +516,7 @@ namespace MiranaCompiler
             }
         }
         
-        private void WriteVar_NoLast(miranaParser.Var_Context context)
+        private void WriteVar_NoLast(miranaParser.AssignableExpContext context)
         {
             var suffixes = context.varSuffix();
             if (context.NAME() != null) {
@@ -535,81 +537,43 @@ namespace MiranaCompiler
             return $"__mira_lpar_{index}";
         }
         public static string GetLambdaImplicitIterName() => "it";
-        public static string GetOperatorLambdaParamName(int index) => $"__mira_olpar_{index}";
+        public static string GetOperatorLambdaParamName(int index) => $"opv_{index}";
 
         private void AddError(ParserRuleContext context, int code, string message)
         {
             compileUnit.AddError($"Error Mira{code} ({context.start.Line}, {context.start.Column}: {message}");
         }
-        private int funLambdaLevel;
-        private void WriteExp(miranaParser.ExpextContext context)
-        {
-            if (context.lambdaImplicitParam() != null) {
-                if (funLambdaLevel == 0) {
-                    AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non-lambda environment");
-                    return;
-                }
-                var a = context.lambdaImplicitParam();
-                writer.Write(GetLambdaImplicitParamName(a.Num));
-            }
-            else if (context.it() != null) {
-                if (funLambdaLevel == 0) {
-                    AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non fun lambda context");
-                    return;
-                }
-                writer.Write(GetLambdaImplicitIterName());
-            }
-            else if (context.arrowLambda() != null) {
-                var a = context.arrowLambda();
-                writer.Write("function");
-                if (a.oneLambdaParamList() != null) {
-                    writer.Write($"({a.oneLambdaParamList().NAME().GetText()})");
-                }
-                else {
-                    var b = a.funLambdaHead();
-                    WriteParamList(b.parlist());
-                }
-                writer.Write(" return ");
-                WriteExp(a.exp());
-                writer.Write(" end");
-            }
-            else if (context.funLambda() != null) {
-                WriteExp(context.funLambda());
-            }
-            else if (context.operatorLambda() != null) {
-                WriteOperatorLambda(context.operatorLambda());
-            }
-        }
-
-        private void WriteExp(miranaParser.FunLambdaContext context)
-        {
-            ++funLambdaLevel;
-            ParamCheckListener paramCheckListener = new(context, compileUnit);
-            new ParseTreeWalker().Walk(paramCheckListener, context);
-            if (context.ParItConflict) {
-                AddError(context, 1, $"Cannot use both numbered lambda parameter and 'it' in fun lambda ");
-                return;
-            }
-            writer.Write($"function{context.CreateParamListString()}");
-            indent++;
-            WriteBlock(context.expBlock());
-            WriteEnd();
-            --funLambdaLevel;
-        }
 
         private void WriteBlock(miranaParser.ExpBlockContext context)
         {
-            context.stat().ForEach(WriteStat);
-            if (context.retstat() != null) {
-                WriteStat(context.retstat());
+            if (context.retstat() is null && context.explist() is null) {
+                var statements = context.stat();
+                if (statements.Length is not 0) {
+                    if (statements[^1].stat_funcall() != null) {
+                        statements.SkipLast(1).ForEach(WriteStat);
+                        writer.WriteLine();
+                        WriteIndent();
+                        writer.Write("return ");
+                        WriteStat(statements[^1].stat_funcall());
+                    }
+                    else {
+                        statements.ForEach(WriteStat);
+                    }
+                }
             }
-            else if (context.explist() != null) {
-                writer.WriteLine();
-                WriteIndent();
-                writer.Write("return");
-                if (context.explist() != null) {
-                    writer.Write(' ');
-                    WriteExp(context.explist());
+            else {
+                context.stat().ForEach(WriteStat);
+                if (context.retstat() != null) {
+                    WriteStat(context.retstat());
+                }
+                else if (context.explist() != null) {
+                    writer.WriteLine();
+                    WriteIndent();
+                    writer.Write("return");
+                    if (context.explist() != null) {
+                        writer.Write(' ');
+                        WriteExp(context.explist());
+                    }
                 }
             }
         }
@@ -704,7 +668,7 @@ namespace MiranaCompiler
         
         private void WriteStat(miranaParser.Stat_opdaContext context)
         {
-            var c = context.var_();
+            var c = context.assignableExp();
             var varSuffixes = c.varSuffix();
             if (varSuffixes.Length == 0) {
                 writer.Write($"{c.NAME().GetText()} = {c.NAME().GetText()} {GetOpdaString(context.opda())} 1");
@@ -762,10 +726,10 @@ namespace MiranaCompiler
 
         private IEnumerable<miranaParser.PredicateexpContext> GetVarDeclareIfPredicate(miranaParser.Stat_ifContext context)
         {
-            if (context.stat_if_if().predicateexp().var_() != null) {
+            if (context.stat_if_if().predicateexp().assignableExp() != null) {
                 yield return context.stat_if_if().predicateexp();
             }
-            var c = context.stat_if_elseif().Where(t => t.predicateexp().var_() != null).Select(t => t.predicateexp());
+            var c = context.stat_if_elseif().Where(t => t.predicateexp().assignableExp() != null).Select(t => t.predicateexp());
             foreach (var d in c)
                 yield return d;
         }
@@ -779,7 +743,7 @@ namespace MiranaCompiler
                 foreach (var vdi in varDeclareIf) {
                     WriteIndent();
                     writer.Write("local ");
-                    WriteVar_(vdi.var_());
+                    WriteVar_(vdi.assignableExp());
                     writer.Write(" = ");
                     WriteExp(vdi.exp());
                     writer.WriteLine();
@@ -814,11 +778,11 @@ namespace MiranaCompiler
         {
             writer.Write("if ");
             var exp = context.predicateexp();
-            if (exp.var_() == null) {
+            if (exp.assignableExp() == null) {
                 WriteExp(GetSingleParenthesisedExpressionIfPossible(exp.exp())??exp.exp());
             }
             else {
-                WriteVar_(exp.var_());
+                WriteVar_(exp.assignableExp());
             }
             writer.Write(" then");
             indent++;
@@ -832,11 +796,11 @@ namespace MiranaCompiler
             WriteIndent();
             writer.Write("elseif ");
             var exp = context.predicateexp();
-            if (exp.var_() == null) {
+            if (exp.assignableExp() == null) {
                 WriteExp(GetSingleParenthesisedExpressionIfPossible(exp.exp())??exp.exp());
             }
             else {
-                WriteVar_(exp.var_());
+                WriteVar_(exp.assignableExp());
             }
             writer.Write(" then");
             indent++;
@@ -863,11 +827,12 @@ namespace MiranaCompiler
         private static string GetOpdaString(string context) => context switch {
             "+=" => "+",
             "-=" => "-",
-            "*=" => "*"
+            "*=" => "*",
+            _ => throw new()
         };
         private void WriteStat(miranaParser.Stat_cassignContext context)
         {
-            var c = context.var_();
+            var c = context.assignableExp();
             var varSuffixes = c.varSuffix();
             if (varSuffixes.Length == 0) {
                 writer.Write($"{c.NAME().GetText()} = {c.NAME().GetText()} {GetOpdaString(context.OpCassign().GetText())} ");
@@ -891,7 +856,7 @@ namespace MiranaCompiler
 
         void WriteVarList(miranaParser.VarlistContext context)
         {
-            var vars = context.var_();
+            var vars = context.assignableExp();
             WriteVar_(vars[0]);
             for (int i = 1; i < vars.Length; ++i) {
                 writer.Write(", ");

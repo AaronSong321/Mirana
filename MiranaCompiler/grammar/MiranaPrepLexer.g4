@@ -3,7 +3,7 @@ lexer grammar MiranaPrepLexer;
 
 @lexer::members{
 //private int parenLevel;
-private bool insideMacro;
+//private bool insideMacro;
 }
 
 MacroDefine: '#define' -> pushMode(MacroParameterSearch);
