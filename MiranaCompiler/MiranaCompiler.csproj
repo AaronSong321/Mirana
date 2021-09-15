@@ -6,6 +6,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <NoWarn>1701;1702;3021</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <NoWarn>1701;1702;3021</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="Antlr4" Version="4.6.6">
         <PrivateAssets>all</PrivateAssets>

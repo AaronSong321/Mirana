@@ -12,13 +12,9 @@ private void AddFunLambdaLevel() => funLambdaLevel.Push(0);
 private bool IsInFunLambda => funLambdaLevel.Count != 0;
 }
 
-chunk
-    : block EOF
-    ;
+chunk: block EOF;
 
-block
-    : stat* retstat?
-    ;
+block: stat* retstat?;
     
 stat
 : stat_assign

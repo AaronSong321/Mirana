@@ -41,7 +41,7 @@ namespace MiranaCompiler
 
     public class Compiler
     {
-        public static readonly Version Version = new(1, 6, 0);
+        public static readonly Version Version = new(1, 6, 1);
         public Compiler() { }
         public async Task CompileAsync(string[] paths)
         {
@@ -54,9 +54,6 @@ namespace MiranaCompiler
                 if (t.HasError()) {
                     Console.WriteLine($"{t.ErrorNumber} errors in file {t.FilePath}");
                     t.PrintErrors();
-                }
-                else {
-                    Console.WriteLine($"Successfully write to file {MiranaToLuaWriter.CreateLuaFilePath(t.FilePath)}");
                 }
             }
             var tasks = compileUnits.Select(t => Task.Run(() => {

@@ -3,42 +3,8 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
 
 # Features
 
-- Arrow lambda expression:
-  When there's only one parameter, the parenthesis can be omitted.
-  ```
-  local a = t -> t:GetName()
-  local c = (a, b) -> a == b
-  ```
-  compiles to
-  ```lua
-  local a = function(t) return t:GetName() end
-  local c = function(a, b) return a == b end
-  ```
-- Fun lambda expression:
-  Use $1-$8 as parameters. If only one parameter is required, it's allowed to use `it`. $1-$8 and it cannot be used together in one lambda expression.
-  ```
-  local a = fun { $1 == $2 }
-  local b = fun { it.count }
-  ```
-  compiles to
-  ```lua
-  local a = function(__mira_lpar_1, __mira_lpar_2)
-    return __mira_lpar_1 == __mira_lpar_2
-  end
-  local b = function(__mira_lpar_it)
-    return __mira_lpar_it.count
-  end
-  ```
-  When a fun lambda is the last of an argument list, it can be taken out of the parenthesis. Further, if the fun lambda is the only argument, the parenthesis can be omitted.
-  ```
-  a(1, 2) fun { it * 2 }
-  a.b fun { it + it }
-  a:c fun { {it.match, it} }:o fun {
-    it + 1
-  }
-  ```
 - Easy lambda expression:
-  The `fun` keyword is absurd between a function name and a pair of braces. Easy lambda expressions don't need the `fun` keyword. It's composed by a parameter list (can be embraced by a pair of parenthesis or not), an arrow, and an expression block, embraced by braces. Easy lambdas can also be moved out of the parenthesis when used as the last parameter of a function call. For example:
+  Lambda expressions composed by a parameter list (can be embraced by a pair of parenthesis or not), an arrow, and an expression block, embraced by braces. Lambdas can also be moved out of the parenthesis when used as the last parameter of a function call. For example:
   ``` 
   a { (v1, v2, ...) -> 15 }
   a(3, 7) { -> 8 }
@@ -72,7 +38,7 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
     end
   end
   ```
-- If expression: use `if`, `elif`, `else` and braces as keywords to write if expressions. The else branch can be omitted, and in this case the else branch is evaluated to `nil`. For example:
+- If expression: use `if`, `elif`, `else` and braces as keywords to write if expressions. The else branch can be omitted, and in this case the else branch is evaluated to `nil`. Variables can be integrated into `if` and `elif` predicates. For example:
   ```
   local c = if t > 3 {
     15
@@ -106,11 +72,13 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   local mf = function(d) return 3-3+10-(3-3*3-3) end 
   "1""teach{}" + 1 k {{{}}},  "*#"
   ```
+  
 # Usage
 
 Require .NET 5.0 to build and run.
 Call from command-line with MiranaCompiler. Parameters are either path to .mira file or path to folder that contains .mira files.
-Alternatively, you can call it from C# or any other .NET languages. Use:
+
+Alternatively, you can call the Mirana compiler from C# or any other .NET languages. For example:
 
 ```C#
 using MiranaCompiler;
