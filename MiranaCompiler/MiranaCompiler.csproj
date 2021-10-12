@@ -20,6 +20,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+      <PackageReference Include="CommandLineParser" Version="2.9.0-preview1" />
     </ItemGroup>
 
     <ItemGroup>

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Common;
 using MiranaCompiler.grammar;
 
 

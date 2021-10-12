@@ -11,6 +11,7 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Dfa;
 using Antlr4.Runtime.Sharpen;
 using Antlr4.Runtime.Tree;
+using Common;
 using MiranaCompiler.grammar;
 
 
@@ -101,8 +102,8 @@ namespace MiranaCompiler
 
         private void WriteVarSuffixCalls(miranaParser.VarSuffixContext context)
         {
-            var nameandargs = context.nameAndArgs();
-            foreach (var n in nameandargs) {
+            var nameAndArgs = context.nameAndArgs();
+            foreach (var n in nameAndArgs) {
                 WriteNameAndArgs(n);
             }
         }
@@ -208,12 +209,7 @@ namespace MiranaCompiler
             }
             else {
                 writer.Write($"{par1}, {par2}) return {par1}");
-                if (op.operatorStrcat() != null) {
-                    writer.Write($"..");
-                }
-                else {
-                    writer.Write($" {op.GetText()} ");
-                }
+                writer.Write(op.operatorStrcat() != null ? ".." : $" {op.GetText()} ");
                 writer.Write($"{par2} end");
             }
         }
@@ -268,12 +264,6 @@ namespace MiranaCompiler
                     context = context.exp(1);
                     continue;
                 }
-                else if (context.operatorBitwise() != null) {
-                    WriteExp(context.exp(0));
-                    writer.Write($" {context.operatorBitwise().GetText()} ");
-                    context = context.exp(1);
-                    continue;
-                }
                 else if (context.operatorComparison() != null) {
                     WriteExp(context.exp(0));
                     writer.Write($" {context.operatorComparison().GetText()} ");
@@ -309,6 +299,31 @@ namespace MiranaCompiler
                     writer.Write($"{context.operatorStrcat().GetText()}");
                     context = context.exp(1);
                     continue;
+                }
+                else if (context.OpAmpersand() != null) {
+                    WriteExp(context.exp(0));
+                    CopySource(context.OpAmpersand());
+                    WriteExp(context.exp(1));
+                }
+                else if (context.OpPipe() != null) {
+                    WriteExp(context.exp(0));
+                    CopySource(context.OpPipe());
+                    WriteExp(context.exp(1));
+                }
+                else if (context.OpTilde() != null) {
+                    WriteExp(context.exp(0));
+                    CopySource(context.OpTilde());
+                    WriteExp(context.exp(1));
+                }
+                else if (context.OpShl() != null) {
+                    WriteExp(context.exp(0));
+                    CopySource(context.OpShl());
+                    WriteExp(context.exp(1));
+                }
+                else if (context.OpShr() != null) {
+                    WriteExp(context.exp(0));
+                    CopySource(context.OpShr());
+                    WriteExp(context.exp(1));
                 }
                 else {
                     CopySource(context);
@@ -534,10 +549,10 @@ namespace MiranaCompiler
 
         public static string GetLambdaImplicitParamName(int index)
         {
-            return $"__mira_lpar_{index}";
+            return $"_i_{index}";
         }
         public static string GetLambdaImplicitIterName() => "it";
-        public static string GetOperatorLambdaParamName(int index) => $"opv_{index}";
+        private static string GetOperatorLambdaParamName(int index) => $"opv_{index}";
 
         private void AddError(ParserRuleContext context, int code, string message)
         {
@@ -697,7 +712,7 @@ namespace MiranaCompiler
 
         private void WriteStat(miranaParser.Stat_breakContext context)
         {
-            writer.WriteLine("break");
+            writer.Write("break");
         }
 
         private void WriteStat(miranaParser.Stat_funcallContext context)
@@ -705,7 +720,7 @@ namespace MiranaCompiler
             WriteFunctionCall(context.functioncall());
         }
 
-        void WriteFunctionCall(miranaParser.FunctioncallContext context)
+        private void WriteFunctionCall(miranaParser.FunctioncallContext context)
         {
             WriteVarOrExp(context.varOrExp());
             foreach (var n in context.nameAndArgs()) {
@@ -916,11 +931,30 @@ namespace MiranaCompiler
         private void WriteStat(miranaParser.Stat_localdeclContext context)
         {
             writer.Write("local ");
-            writer.Write(context.attnamelist().GetText());
+            WritePart(context.attNameList());
             if (context.explist() != null) {
                 writer.Write(" = ");
                 WriteExp(context.explist());
             }
+        }
+
+        private void WritePart(miranaParser.AttNameListContext context) {
+            var names = context.attName();
+            for (int i = 0; i < names.Length; ++i) {
+                CopySource(names[i].NAME());
+                if (names[i].attribute() != null) {
+                    WritePart(names[i].attribute());
+                }
+                if (i != names.Length - 1) {
+                    writer.Write(", ");
+                }
+            }
+        }
+
+        private void WritePart(miranaParser.AttributeContext context) {
+            writer.Write('<');
+            CopySource(context.NAME());
+            writer.Write('>');
         }
 
         private void WriteStat(miranaParser.Stat_fundeclContext context)
@@ -962,7 +996,7 @@ namespace MiranaCompiler
             writer = new(outputFile, this, compileUnit);
         }
 
-        public static string CreateLuaFilePath(string mira)
+        private static string CreateLuaFilePath(string mira)
         {
             string path = Path.GetDirectoryName(mira)!;
             string name = Path.GetFileNameWithoutExtension(mira);
