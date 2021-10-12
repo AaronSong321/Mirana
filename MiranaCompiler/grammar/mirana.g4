@@ -37,49 +37,48 @@ stat
 | stat_declare
 ;
 
-stat_assign: varlist '=' explist;
+stat_assign: varlist OpAssign explist;
 stat_cassign: assignableExp OpCassign exp;
 stat_funcall: functioncall;
 stat_label: label;
-stat_break: 'break';
-stat_goto: 'goto' NAME;
-stat_do: 'do' block 'end';
-stat_while: 'while' exp stat_do;
-stat_repeat: 'repeat' block 'until' exp;
-stat_if: stat_if_if stat_if_elseif* stat_if_else? 'end';
-stat_fori: 'for' 'local'? NAME '=' exp ',' exp (',' exp)? stat_do;
-stat_foreach: 'for' 'local'? namelist 'in' explist stat_do;
-stat_fundecl: 'function' funcname funcbody;
-stat_localfundecl: 'local' 'function' NAME funcbody;
-stat_localdecl: 'local' attnamelist ('=' explist)?;
+stat_break: BREAK;
+stat_goto: GOTO NAME;
+stat_do: DO block END;
+stat_while: WHILE exp stat_do;
+stat_repeat: REPEAT block UNTIL exp;
+stat_if: stat_if_if stat_if_elseif* stat_if_else? END;
+stat_fori: FOR LOCAL? NAME OpAssign exp OpComma exp (OpComma exp)? stat_do;
+stat_foreach: FOR LOCAL? namelist IN explist stat_do;
+stat_fundecl: FUNCTION funcname funcbody;
+stat_localfundecl: LOCAL FUNCTION NAME funcbody;
+stat_localdecl: LOCAL attNameList (OpAssign explist)?;
 stat_semicolon: ';';
-
-stat_if_if: 'if' predicateexp 'then' block;
-stat_if_elseif: ('elseif'|'elif') predicateexp 'then' block;
-stat_if_else: 'else' block;
-
 stat_opda: opda assignableExp;
+
+stat_if_if: IF predicateexp THEN block;
+stat_if_elseif: (ELSEIF|ELIF) predicateexp THEN block;
+stat_if_else: ELSE block;
 
 predicateexp
 : exp
-| 'local' assignableExp '=' exp
+| LOCAL assignableExp OpAssign exp
 ;
 
-attnamelist: NAME attrib (',' NAME attrib)*;
+attNameList: attName (OpComma attName)*;
+attName: NAME attribute?;
+attribute: OpLt NAME OpGt;
 
-attrib: ('<' NAME '>')?;
+retstat: RETURN explist? ';'?;
 
-retstat: 'return' explist? ';'?;
+label: OpDoubleColon NAME OpDoubleColon;
 
-label: '::' NAME '::';
+funcname: NAME (OpDot NAME)* (OpColon NAME)?;
 
-funcname: NAME ('.' NAME)* (':' NAME)?;
+varlist: assignableExp (OpComma assignableExp)*;
 
-varlist: assignableExp (',' assignableExp)*;
-
-namelist: NAME (',' NAME)*;
+namelist: NAME (OpComma NAME)*;
     
-varName: NAME (':' typeExp)?;
+varName: NAME (OpColon typeExp)?;
 
 typeExp
 : funcType
@@ -116,24 +115,22 @@ simpleArrayType
 ;
 
 simpleType
-: literalType NullableMark?
+: literalType OpQues?
 ;
 
 literalType: TINT | TFLOAT | TSTRING | TBOOL | ANY | ATABLE | TUSERDATA;
-NullableMark: '?';
 
-stat_declare
-: 'declare' localOrGlobal? NAME ':' typeExp
-;
+stat_declare: 'declare' localOrGlobal? NAME OpColon typeExp;
 
-localOrGlobal: 'local' | 'global';
+localOrGlobal: LOCAL | GLOBAL;
 
 explist
-: exp (',' exp)*
+: exp (OpComma exp)*
 ;
 
 exp
-: 'nil' | 'false' | 'true'
+: NIL
+| TRUE | FALSE
 | funcLiteral
 | prefixexp
 | ifexp
@@ -153,7 +150,10 @@ exp
 | exp operatorComparison exp
 | exp operatorAnd exp
 | exp operatorOr exp
-| exp operatorBitwise exp
+| exp OpAmpersand exp
+| exp OpPipe exp
+| exp OpTilde exp
+| exp (OpShl | OpShr) exp
 ;
 
 ifexp
@@ -174,9 +174,9 @@ operatorLambda
 ;
 
 opcom
-: operatorUnary
+: operatorAddSub
 | opda
-| operatorAddSub
+| operatorUnary
 | operatorAnd
 | operatorBitwise
 | operatorComparison
@@ -189,7 +189,7 @@ opcom
 lambdaImplicitParam: LambdaImplicitParam;
 it: IT;
 
-arrow: '->';
+arrow: OpArrow;
 
 expBlock: stat* (retstat | explist)?;
 
@@ -201,8 +201,8 @@ varOrExp: assignableExp | '(' exp ')';
 
 assignableExp: (NAME | it | lambdaImplicitParam | '(' exp ')' varSuffix) varSuffix*;
 
-varSuffix: nameAndArgs* ('[' exp ']' | '.' NAME);
-nameAndArgs: (':' NAME)? args;
+varSuffix: nameAndArgs* ('[' exp ']' | OpDot NAME);
+nameAndArgs: (OpColon NAME)? args;
 
 args
 : '(' explist? ')' kotLambda
@@ -213,70 +213,52 @@ args
 ;
 
 funcLiteral
-: 'function' funcbody
+: FUNCTION funcbody
 ;
 
-funcbody
-    : '(' parlist? ')' block 'end'
-    ;
+funcbody: '(' parlist? ')' block END;
 
-parlist
-    : namelist (',' dots)? | dots
-    ;
+parlist: namelist (OpComma dots)? | dots;
 
-tableconstructor
-    : LBRACE fieldlist? RBRACE
-    ;
+tableconstructor: LBRACE fieldlist? RBRACE;
 
-fieldlist
-    : field (fieldsep field)* fieldsep?
-    ;
+fieldlist: field (fieldsep field)* fieldsep?;
 
-field
-    : '[' exp ']' '=' exp | NAME '=' exp | exp
-    ;
+field: '[' exp ']' OpAssign exp | NAME OpAssign exp | exp;
 
-fieldsep
-    : ',' | ';'
-    ;
+fieldsep: OpComma | ';';
+
 dots: '...';
 
-operatorOr
-	: 'or';
+operatorOr: 'or';
 
-operatorAnd
-	: 'and';
+operatorAnd: 'and';
 
-operatorComparison
-	: '<' | '>' | '<=' | '>=' | '~=' | '==';
+operatorComparison: OpLt | OpGt | '<=' | '>=' | '~=' | '==';
 
-operatorStrcat
-	: '..';
+operatorStrcat: '..';
 
-operatorAddSub
-	: '+' | '-';
+operatorAddSub: '+' | '-';
 
-operatorMulDivMod
-	: '*' | '/' | '%' | '//';
+operatorMulDivMod: '*' | '/' | '%' | '//';
 
 operatorBitwise
-	: '&' | '|' | '~' | '<<' | '>>';
+: OpAmpersand
+| OpPipe
+| OpTilde
+| OpShl
+| OpShr
+;
 
-operatorUnary
-    : 'not' | '#' | '-' | '~';
+operatorUnary: 'not' | '#' | '-' | '~';
     
 opda: OpAddOne | OpSubOne;
 
-operatorPower
-    : '^';
+operatorPower: '^';
 
-number
-    : INT | HEX | FLOAT | HEX_FLOAT
-    ;
+number: INT | HEX | FLOAT | HEX_FLOAT;
 
-string
-    : NORMALSTRING | CHARSTRING | LONGSTRING
-    ;
+string: NORMALSTRING | CHARSTRING | LONGSTRING;
 
 // LEXER
 
@@ -288,9 +270,38 @@ ANY: 'any';
 ATABLE: 'atable';
 TUSERDATA: 'userdata';
 
+
+// control keywords
+RETURN: 'return';
+IF: 'if';
+FOR: 'for';
+BREAK: 'break';
+ELSE: 'else';
+ELIF: 'elif';
+ELSEIF: 'elseif';
+DO: 'do';
+THEN: 'then';
+GOTO: 'goto';
+END: 'end';
+WHILE: 'while';
+REPEAT: 'repeat';
+UNTIL: 'until';
+IN: 'in';
+LOCAL: 'local';
+FUNCTION: 'function';
+DECLARE: 'declare';
+GLOBAL: 'global';
+NIL: 'nil';
+FALSE: 'false';
+TRUE: 'true';
+
 OpAddOne: '++';
 OpSubOne: '~~';
+OpDoubleColon: '::';
+OpArrow: '->';
 OpCassign: '+=' | '-=' | '*=';
+OpShr: '>>';
+OpShl: '<<';
 IT: { IsInFunLambda }? 'it';
 LambdaImplicitParam: { IsInFunLambda }? '$' [1-8];
 FUN: { AddFunLambdaLevel(); } 'fun';
@@ -306,114 +317,88 @@ if (IsInFunLambda) {
         funLambdaLevel.Push(a);
 }
 }'}';
+OpAssign: '=';
+OpComma: ',';
+OpColon: ':';
+OpLt: '<';
+OpGt: '>';
+OpDot: '.';
+OpQues: '?';
+OpAmpersand: '&';
+OpPipe: '|';
+OpTilde: '~';
 
-NAME
-    : [a-zA-Z_][a-zA-Z_0-9]*
-    ;
 
-NORMALSTRING
-    : '"' ( EscapeSequence | ~('\\'|'"') )* '"'
-    ;
+NAME: [a-zA-Z_][a-zA-Z_0-9]*;
 
-CHARSTRING
-    : '\'' ( EscapeSequence | ~('\''|'\\') )* '\''
-    ;
+NORMALSTRING: '"' ( EscapeSequence | ~('\\'|'"') )* '"';
 
-LONGSTRING
-    : '[' NESTED_STR ']'
-    ;
+CHARSTRING: '\'' ( EscapeSequence | ~('\''|'\\') )* '\'';
 
-fragment
-NESTED_STR
-    : '=' NESTED_STR '='
-    | '[' .*? ']'
-    ;
+LONGSTRING: '[' NESTED_STR ']';
 
-INT
-    : Digit+
-    ;
+fragment NESTED_STR
+: '=' NESTED_STR '='
+| '[' .*? ']'
+;
 
-HEX
-    : '0' [xX] HexDigit+
-    ;
+INT: Digit+;
+
+HEX: '0' [xX] HexDigit+;
 
 FLOAT
-    : Digit+ '.' Digit* ExponentPart?
-    | '.' Digit+ ExponentPart?
-    | Digit+ ExponentPart
-    ;
+: Digit+ '.' Digit* ExponentPart?
+| '.' Digit+ ExponentPart?
+| Digit+ ExponentPart
+;
 
 HEX_FLOAT
-    : '0' [xX] HexDigit+ '.' HexDigit* HexExponentPart?
-    | '0' [xX] '.' HexDigit+ HexExponentPart?
-    | '0' [xX] HexDigit+ HexExponentPart
-    ;
+: '0' [xX] HexDigit+ '.' HexDigit* HexExponentPart?
+| '0' [xX] '.' HexDigit+ HexExponentPart?
+| '0' [xX] HexDigit+ HexExponentPart
+;
 
-fragment
-ExponentPart
-    : [eE] [+-]? Digit+
-    ;
+fragment ExponentPart
+: [eE] [+-]? Digit+
+;
 
-fragment
-HexExponentPart
-    : [pP] [+-]? Digit+
-    ;
+fragment HexExponentPart
+: [pP] [+-]? Digit+
+;
 
-fragment
-EscapeSequence
-    : '\\' [abfnrtvz"'\\]
-    | '\\' '\r'? '\n'
-    | DecimalEscape
-    | HexEscape
-    | UtfEscape
-    ;
+fragment EscapeSequence
+: '\\' [abfnrtvz"'\\]
+| '\\' '\r'? '\n'
+| DecimalEscape
+| HexEscape
+| UtfEscape
+;
 
-fragment
-DecimalEscape
-    : '\\' Digit
-    | '\\' Digit Digit
-    | '\\' [0-2] Digit Digit
-    ;
+fragment DecimalEscape
+: '\\' Digit
+| '\\' Digit Digit
+| '\\' [0-2] Digit Digit
+;
 
-fragment
-HexEscape
-    : '\\' 'x' HexDigit HexDigit
-    ;
+fragment HexEscape: '\\' 'x' HexDigit HexDigit;
 
-fragment
-UtfEscape
-    : '\\' 'u{' HexDigit+ '}'
-    ;
+fragment UtfEscape: '\\' 'u{' HexDigit+ '}';
 
-fragment
-Digit
-    : [0-9]
-    ;
+fragment Digit: [0-9];
 
-fragment
-HexDigit
-    : [0-9a-fA-F]
-    ;
+fragment HexDigit: [0-9a-fA-F];
 
-COMMENT
-    : '--[' NESTED_STR ']' -> channel(HIDDEN)
-    ;
+COMMENT: '--[' NESTED_STR ']' -> channel(HIDDEN);
 
 LINE_COMMENT
-    : '--'
-    (                                               // --
+: '--' (                                               // --
     | '[' '='*                                      // --[==
     | '[' '='* ~('='|'['|'\r'|'\n') ~('\r'|'\n')*   // --[==AA
     | ~('['|'\r'|'\n') ~('\r'|'\n')*                // --AAA
-    ) ('\r\n'|'\r'|'\n'|EOF)
-    -> channel(HIDDEN)
-    ;
+) ('\r\n'|'\r'|'\n'|EOF)
+-> channel(HIDDEN)
+;
 
-WS
-    : [ \t\u000C\r\n]+ -> skip
-    ;
+WS: [ \t\u000C\r\n]+ -> skip;
 
-SHEBANG
-    : '#' '!' ~('\n'|'\r')* -> channel(HIDDEN)
-    ;
-
+SHEBANG: '#' '!' ~('\n'|'\r')* -> channel(HIDDEN);
