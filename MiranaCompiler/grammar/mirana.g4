@@ -61,7 +61,7 @@ stat_if_else: ELSE block;
 
 predicateexp
 : exp
-| LOCAL assignableExp OpAssign exp
+| LOCAL assignableExp OpAssign exp (';' exp)?
 ;
 
 attNameList: attName (OpComma attName)*;
@@ -216,7 +216,10 @@ funcLiteral
 : FUNCTION funcbody
 ;
 
-funcbody: '(' parlist? ')' block END;
+funcbody
+: '(' parlist? ')' block END
+| '(' parlist? ')' OpArrow exp
+;
 
 parlist: namelist (OpComma dots)? | dots;
 

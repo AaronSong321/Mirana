@@ -240,21 +240,6 @@ namespace MiranaCompiler
                 else if (context.funcLiteral() != null) {
                     WriteFunctionDef(context.funcLiteral());
                 }
-                // else if (context.lambdaImplicitParam() != null) {
-                //     if (funLambdaLevel == 0) {
-                //         AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non-lambda environment");
-                //         return;
-                //     }
-                //     var a = context.lambdaImplicitParam();
-                //     writer.Write(GetLambdaImplicitParamName(a.Num));
-                // }
-                // else if (context.it() != null) {
-                //     if (funLambdaLevel == 0) {
-                //         AddError(context.lambdaImplicitParam(), 1, $"Cannot use lambda implicit parameter in a non fun lambda context");
-                //         return;
-                //     }
-                //     writer.Write(GetLambdaImplicitIterName());
-                // }
                 else if (context.operatorLambda() != null) {
                     WriteOperatorLambda(context.operatorLambda());
                 }
@@ -360,6 +345,22 @@ namespace MiranaCompiler
             writer.Write(")()");
         }
 
+        private void WritePredicateExp_AssignmentPart(miranaParser.PredicateexpContext context) 
+        {
+            writer.Write("local ");
+            WriteVar_(context.assignableExp());
+            writer.Write(" = ");
+            WriteExp(context.exp(0));
+            writer.WriteLine();
+            WriteIndent();
+            writer.Write("if ");
+            if (context.exp().Length is 1)
+                WriteVar_(context.assignableExp());
+            else
+                WriteExp(context.exp(1));
+            writer.Write(" then");
+        }
+
         private void WriteExp(miranaParser.Ifexp_elifContext context)
         {
             var predicate = context.predicateexp();
@@ -368,19 +369,11 @@ namespace MiranaCompiler
                 writer.WriteLine("else");
                 ++indent;
                 WriteIndent();
-                writer.Write("local ");
-                WriteVar_(predicate.assignableExp());
-                writer.Write(" = ");
-                WriteExp(predicate.exp());
-                writer.WriteLine();
-                WriteIndent();
-                writer.Write("if ");
-                WriteVar_(predicate.assignableExp());
-                writer.Write(" then");
+                WritePredicateExp_AssignmentPart(predicate);
             }
             else {
                 writer.Write("elseif ");
-                WriteExp(predicate.exp());
+                WriteExp(predicate.exp(0));
                 writer.Write(" then");
             }
             ++indent;
@@ -394,19 +387,11 @@ namespace MiranaCompiler
             var predicate = context.predicateexp();
             WriteIndent();
             if (predicate.assignableExp() != null) {
-                writer.Write("local ");
-                WriteVar_(predicate.assignableExp());
-                writer.Write(" = ");
-                WriteExp(predicate.exp());
-                writer.WriteLine();
-                WriteIndent();
-                writer.Write("if ");
-                WriteVar_(predicate.assignableExp());
-                writer.Write(" then");
+                WritePredicateExp_AssignmentPart(predicate);
             }
             else {
                 writer.Write("if ");
-                WriteExp(predicate.exp());
+                WriteExp(predicate.exp(0));
                 writer.Write(" then");
             }
             ++indent;
@@ -484,9 +469,22 @@ namespace MiranaCompiler
                 WriteParamList(context.parlist());
             else 
                 writer.Write("()");
-            indent++;
-            WriteBlock(context.block());
-            WriteEnd();
+            if (context.block() is not null){
+                indent++;
+                WriteBlock(context.block());
+                WriteEnd();
+            }
+            else if (context.exp().NIL() != null) {
+                writer.Write(" end");
+            }
+            else {
+                writer.WriteLine();
+                indent++;
+                WriteIndent();
+                writer.Write("return ");
+                WriteExp(context.exp());
+                WriteEnd();
+            }
         }
 
         private void WritePrefixExp(miranaParser.PrefixexpContext context)
@@ -752,19 +750,6 @@ namespace MiranaCompiler
         private void WriteStat(miranaParser.Stat_ifContext context)
         {
             var varDeclareIf = GetVarDeclareIfPredicate(context).ToArray();
-            if (varDeclareIf.Length != 0) {
-                writer.WriteLine("do");
-                ++indent;
-                foreach (var vdi in varDeclareIf) {
-                    WriteIndent();
-                    writer.Write("local ");
-                    WriteVar_(vdi.assignableExp());
-                    writer.Write(" = ");
-                    WriteExp(vdi.exp());
-                    writer.WriteLine();
-                }
-                WriteIndent();
-            }
             WriteStat(context.stat_if_if());
             foreach (var e in context.stat_if_elseif()) {
                 WriteStat(e);
@@ -772,10 +757,7 @@ namespace MiranaCompiler
             if (context.stat_if_else() != null) {
                 WriteStat(context.stat_if_else());
             }
-            WriteEnd();
-            if (varDeclareIf.Length != 0) {
-                WriteEnd();
-            }
+            Enumerable.Range(0, varDeclareIf.Length+1).ForEach(_ => WriteEnd());
         }
 
         private static miranaParser.ExpContext? GetSingleParenthesisedExpressionIfPossible(miranaParser.ExpContext context)
@@ -789,17 +771,25 @@ namespace MiranaCompiler
             return b.exp();
         }
 
+        private static miranaParser.ExpContext GetSingleParenthesisedExpressionOrThis(miranaParser.ExpContext context) {
+            return GetSingleParenthesisedExpressionIfPossible(context)??context;
+        }
+
         private void WriteStat(miranaParser.Stat_if_ifContext context)
         {
-            writer.Write("if ");
-            var exp = context.predicateexp();
-            if (exp.assignableExp() == null) {
-                WriteExp(GetSingleParenthesisedExpressionIfPossible(exp.exp())??exp.exp());
+            var predicate = context.predicateexp();
+            bool hasAssignment = predicate.assignableExp() != null;
+            if (hasAssignment) {
+                writer.WriteLine("do");
+                ++indent;
+                WriteIndent();
+                WritePredicateExp_AssignmentPart(predicate);
             }
             else {
-                WriteVar_(exp.assignableExp());
+                writer.Write("if ");
+                WriteExp(GetSingleParenthesisedExpressionOrThis(predicate.exp(0)));
+                writer.Write(" then");
             }
-            writer.Write(" then");
             indent++;
             WriteBlock(context.block());
         }
@@ -809,15 +799,19 @@ namespace MiranaCompiler
             --indent;
             writer.WriteLine();
             WriteIndent();
-            writer.Write("elseif ");
-            var exp = context.predicateexp();
-            if (exp.assignableExp() == null) {
-                WriteExp(GetSingleParenthesisedExpressionIfPossible(exp.exp())??exp.exp());
+            var predicate = context.predicateexp();
+            bool hasAssignment = predicate.assignableExp() != null;
+            if (hasAssignment) {
+                writer.WriteLine("else");
+                ++indent;
+                WriteIndent();
+                WritePredicateExp_AssignmentPart(predicate);
             }
             else {
-                WriteVar_(exp.assignableExp());
+                writer.Write("elseif ");
+                WriteExp(GetSingleParenthesisedExpressionOrThis(predicate.exp(0)));
+                writer.Write(" then");
             }
-            writer.Write(" then");
             indent++;
             WriteBlock(context.block());
         }

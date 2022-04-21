@@ -9,6 +9,14 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   a { (v1, v2, ...) -> 15 }
   a(3, 7) { -> 8 }
   ```
+  Normal lua function declarations can also use an expression together with an arrow as the return value of the function.
+  ```
+  function(t) -> t:GetUnitName()
+  ```
+  compiles to
+  ```lua
+  function(t) return t:GetUnitName() end
+  ```
 - Operator lambda:
   Most operators (+,-,*,/,%,^,==,~=,..,and,or,not,&&,||,++,~~) can be used as lambda expression when surrounded by braces.
   ``` 
@@ -16,13 +24,13 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   ```
   compiles to
   ```lua
-  local a,b = function(__mira_olpar_1, __mira_olpar_2) return __mira_olpar_1 > __mira_olpar_2 end, function(__mira_olpar_1) return not __mira_olpar_1 end
+  local a,b = function(opv_1, opv_2) return opv_1 > opv_2 end, function(opv_1) return not opv_1 end
   ```
-- If integrated variable declaration:
+- If integrated variable declaration: a local variable declaration can be inserted before the predicate of an if statement and separated by a comma. The predicate in this way can be omitted if the variable itself is to be checked (semantically, neither `nil` nor `false` in lua). Throughout Mirana files, you can use `elif` instead of `elseif`.
   ```
-  if target = a:GetTarget() then
+  if local target = a:GetTarget() then
     ShootAt(target)
-  elif health = f:GetHealth() then -- elif equals to elseif
+  elif local health = f:GetHealth(); health > 1000 then -- elif equals to elseif
     ...
   end
   ```
@@ -30,11 +38,13 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   ```lua
   do
     local target = a:GetTarget()
-    local health = f:GetHealth()
     if target then
-        ShootAt(target)
-    elseif health then
+      ShootAt(target)
+    else
+      local health = f:GetHealth()
+      if health > 1000 then
         print(health)
+      end
     end
   end
   ```
@@ -61,7 +71,7 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   __mira_locvar_1[2] = __mira_locvar_1[2] + 1
   ```
   also operator +=, -=, *=.
-- Macros: they're very like C++ macros.
+<!-- - Macros: they're very like C++ macros.
   ``` 
   #define Abc(a,b,c) local a = function(d) return c+b-(c*c) end
   #define Match(f,d,...) f#d + f k##__VA_ARGS__
@@ -71,7 +81,7 @@ Mirana is an extension to lua. It compiles to lua before running. Full grammar i
   ```lua
   local mf = function(d) return 3-3+10-(3-3*3-3) end 
   "1""teach{}" + 1 k {{{}}},  "*#"
-  ```
+  ``` -->
   
 # Usage
 

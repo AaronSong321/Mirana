@@ -12,7 +12,7 @@ namespace MiranaCompiler
 
     public class Compiler
     {
-        public static readonly Version Version = new(1, 6, 1);
+        public static readonly Version Version = new(1, 6, 2);
         public Compiler() { }
         static void State(CompileUnit t)
         {
